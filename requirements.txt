@@ -1,0 +1,4 @@
+#
+# pip3 install -r requirements.txt
+#
+-e git+https://github.com/aparrish/pytracery.git@a47cfe4c4ebd36f3cc3fbaf603d7e1e8eadcddfb#egg=tracery
