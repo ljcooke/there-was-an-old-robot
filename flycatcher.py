@@ -36,7 +36,9 @@ RULES = {
     'rip': "They're dead, of course.",
 
     'intro': 'There was an old robot who swallowed #_an_animal#.',
+
     'refrain': 'They swallowed #_an_animal##punc#',
+    'refrain_exc': 'They swallowed #_an_animal#!',
 
     'desc_bird': 'How absurd! #refrain#',
     'desc_cat': [
@@ -45,13 +47,15 @@ RULES = {
     ],
     'desc_cow': "I don't know how they swallowed #_an_animal##punc#",
     'desc_dog': 'What a hog! #refrain#',
-    'desc_goat': '#they_just.capitalize# opened their throat and swallowed #_an_animal##punc#',
+    'desc_fox': '#They_Just# opened the box and swallowed #_an_animal##punc#',
+    'desc_goat': '#They_Just# opened their throat and swallowed #_an_animal##punc#',
+    'desc_seal': 'Are you for real? #refrain_exc#',
     'desc_snail': [
-        '#they_just.capitalize# lifted the veil and swallowed #_an_animal##punc#',
+        '#They_Just# lifted the veil and swallowed #_an_animal##punc#',
         'Oh what a tale! #refrain#',
     ],
 
-    'they_just': ['they', 'just'],
+    'They_Just': ['They', 'Just'],
 
     'catch1': 'They swallowed the #_animal# to catch the #_animal2#...',
     'catch2': '...they swallowed the #_animal# to catch the #_animal2#...',
@@ -82,9 +86,19 @@ RHYMES = {
         frog frog
     """,
 
+    'fox': """
+        fox fox fox
+        ox
+    """,
+
     'goat': """
         goat goat goat goat
         stoat
+    """,
+
+    'seal': """
+        eel
+        seal
     """,
 
     'snail': """
