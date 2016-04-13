@@ -8,6 +8,7 @@ by Liam Cooke (@inky) Apr 2016
 """
 from __future__ import unicode_literals
 
+import argparse
 import random
 import sys
 
@@ -32,33 +33,33 @@ RULES = {
     'origin': '#_text#',  #'#_emoji# #_text#',
 
     'opening': 'There was an old robot who swallowed a fly.',
-    'why_fly': "I don't know why they swallowed a fly. Perhaps they'll die.",
-    'rip': "They're dead, of course.",
+    'why_fly': "I don't know why #they# swallowed a fly. <br> Perhaps #they#'ll die.",
+    'rip': "#they.capitalize#'re dead, of course.",
 
     'intro': 'There was an old robot who swallowed #_an_animal#.',
 
-    'refrain': 'They swallowed #_an_animal##punc#',
-    'refrain_exc': 'They swallowed #_an_animal#!',
+    'refrain': '#they.capitalize# swallowed #_an_animal##punc#',
+    'refrain_exc': '#they.capitalize# swallowed #_an_animal#!',
 
     'desc_bird': 'How absurd! #refrain#',
     'desc_cat': [
         'Fancy that! #refrain#',
         'Imagine that! #refrain#',
     ],
-    'desc_cow': "I don't know how they swallowed #_an_animal##punc#",
+    'desc_cow': "I don't know how #they# swallowed #_an_animal##punc#",
     'desc_dog': 'What a hog! #refrain#',
-    'desc_fox': '#They_Just# opened the box and swallowed #_an_animal##punc#',
-    'desc_goat': '#They_Just# opened their throat and swallowed #_an_animal##punc#',
+    'desc_fox': '#they_just.capitalize# opened the box and swallowed #_an_animal##punc#',
+    'desc_goat': '#they_just.capitalize# opened #their# throat and swallowed #_an_animal##punc#',
     'desc_seal': 'Are you for real? #refrain_exc#',
     'desc_snail': [
-        '#They_Just# lifted the veil and swallowed #_an_animal##punc#',
-        'Oh what a tale! #refrain#',
+        '#they_just.capitalize# lifted the veil and swallowed #_an_animal##punc#',
+        'What a tale! #refrain#',
     ],
 
-    'They_Just': ['They', 'Just'],
+    'they_just': ['#they#', 'just'],
 
-    'catch1': 'They swallowed the #_animal# to catch the #_animal2#...',
-    'catch2': '...they swallowed the #_animal# to catch the #_animal2#...',
+    'catch1': '#they.capitalize# swallowed the #_animal# to catch the #_animal2#...',
+    'catch2': '...#they# swallowed the #_animal# to catch the #_animal2#...',
 
     'punc': ['!', '.'],
 }
@@ -137,13 +138,13 @@ class Flycatcher(object):
         """
         # Handle the opening and closing verses.
         if animals == 'fly':
-            yield '{} {}'.format(
+            yield '{} <br> {}'.format(
                 self.line('opening'),
                 self.line('why_fly'),
             )
             return
         elif animals == 'horse':
-            yield '{} {}'.format(
+            yield '{} <br> {}'.format(
                 self.line('intro', 'horse'),
                 self.line('rip'),
             )
@@ -155,7 +156,7 @@ class Flycatcher(object):
 
         # Introduce the animal with a description.
         key, animal = new_animal
-        yield '{} {}'.format(
+        yield '{} <br> <i>{}</i>'.format(
             self.line('intro', animal),
             self.line('desc_' + key, animal),
         )
@@ -168,7 +169,8 @@ class Flycatcher(object):
             yield self.line('catch1' if capital else 'catch2',
                             animal, prev_animal)
             if prev_key and not random.randint(0, 3):
-                yield '– {}'.format(self.line('desc_' + prev_key, prev_animal))
+                yield '<exclaim>{}</exclaim>'.format(
+                    self.line('desc_' + prev_key, prev_animal))
                 capital = True
             else:
                 capital = False
@@ -179,8 +181,13 @@ class Flycatcher(object):
 
     def line(self, text, animal=None, animal2=None):
         rules = RULES.copy()
-        rules['_text'] = '#%s#' % text
-        rules['_emoji'] = self.emoji
+        rules.update({
+            '_text': '#%s#' % text,
+            '_emoji': self.emoji,
+            'they': 'they',
+            'their': 'their',
+            'them': 'them',
+        })
 
         if animal:
             rules['_animal'] = animal
@@ -190,18 +197,76 @@ class Flycatcher(object):
 
         grammar = tracery.Grammar(rules)
         grammar.add_modifiers(base_english)
-        return grammar.flatten('#origin#')
+
+        result = grammar.flatten('#origin#')
+        result = result.replace('...', '…')
+        return result
+
+
+def format_tex(verses, template=None):
+    text = []
+    for verse in verses:
+        for line in verse:
+            text.append(line + ' <br>\n')
+        text.append('\n')
+
+    text = ''.join(text).rstrip()
+    text = text.replace('<br>\n\n', '\n\n')
+    text = text.replace('<br>', r'\\')
+    text = text.replace('<i>', r'\textit{').replace('</i>', '}')
+    text = text.replace('…', r'\ldots ')
+    text = text.replace('<exclaim>', r'\hspace{2em}---\textit{')
+    text = text.replace('</exclaim>', r'}')
+
+    if template:
+        return template.replace('%VERSE%', text)
+    else:
+        return text
+
+def format_tweets(verses):
+    lines = []
+    for verse in verses:
+        for line in verse:
+            line = ' '.join(line.replace('<br>', ' ').split())
+            assert len(line) <= 140
+            lines.append(line)
+        lines.append('')
+
+    text = '\n'.join(lines).rstrip()
+    text = text.replace('<i>', '').replace('</i>', '')
+    text = text.replace('<exclaim>', '').replace('</exclaim>', '')
+    return text.strip()
 
 def main():
     """Main entry point."""
-    animals = ['fly']
-    song = Flycatcher()
+    parser = argparse.ArgumentParser()
 
-    for verse in song.verses():
-        for tweet in verse:
-            assert len(tweet) <= 140
-            print(tweet)
-        print('')
+    format_group = parser.add_argument_group('format options')
+    excl_group = format_group.add_mutually_exclusive_group()
+    excl_group.add_argument('-t', '--twitter', action='store_true',
+                            help='plain text with one tweet per line')
+    excl_group.add_argument('-x', '--tex', action='store_true',
+                            help='TeX/LaTeX')
+
+    tex_group = parser.add_argument_group('TeX options')
+    tex_group.add_argument('-f', '--template',
+                           help='TeX template file; must contain the magic '
+                           'word: %VERSE%')
+
+    args = parser.parse_args()
+    verses = tuple(Flycatcher().verses())
+
+    if args.tex:
+        template = None
+        if args.template:
+            with open(args.template) as template_file:
+                template = template_file.read()
+        print(format_tex(verses, template))
+    elif args.twitter:
+        print(format_tweets(verses))
+    else:
+        parser.print_help()
+        return 1
 
 if __name__ == '__main__':
     sys.exit(main())
