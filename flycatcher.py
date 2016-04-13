@@ -1,13 +1,10 @@
 #!/usr/bin/env python3
-# coding: utf-8
 """
 There Was an Old Woman Who Swallowed a Fly: Twitter Bot Edition
 
 by Liam Cooke (@inky) Apr 2016
 
 """
-from __future__ import unicode_literals
-
 import argparse
 import random
 import sys
@@ -251,7 +248,7 @@ def main():
     tex_group = parser.add_argument_group('TeX options')
     tex_group.add_argument('-f', '--template',
                            help='TeX template file; must contain the magic '
-                           'word: %VERSE%')
+                           'word: %%VERSE%%')
 
     args = parser.parse_args()
     verses = tuple(Flycatcher().verses())
